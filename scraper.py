@@ -15,7 +15,28 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    return list()
+    if resp.status != 200 or not resp.raw_response:
+        return[]
+    
+    # Step 2: Check if `raw_response` and `raw_response.content` are available
+    if not resp.raw_response or not resp.raw_response.content:
+        print(f"No content available for {url}")
+        return []
+     
+    # Parse the content of the page
+    soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
+    
+    links = []
+    
+    for link in soup.find_all('a', href = True):
+        href = link['href']
+        absolute_link = urljoin(resp.raw_response.url, link['href'])
+        
+        # Removes fragments
+        absolute_link = urlparse(absolute_link)._replace(fragment="").geturl()
+        links.append(absolute_link)
+        
+    return links
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
