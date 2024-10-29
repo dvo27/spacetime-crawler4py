@@ -116,12 +116,33 @@ def extract_pattern(url):
 
 def detect_pattern(url):
     pattern = extract_pattern(url)  # Get the URL pattern with placeholders for digits
-    visited_patterns[pattern] += 1  # Increment count for this pattern
+    seen_patterns[pattern] += 1  # Increment count for this pattern
     
     # Threshold for pattern repetition (e.g., more than 10 occurrences)
-    if visited_patterns[pattern] > 10:
+    if seen_patterns[pattern] > 10:
         print(f"[DEBUG] Trap detected for pattern: {pattern}")
         return True
     
     return False
+    
+def empty_URL(resp):
+    """
+    Checks for if the URL works, but has no content
+
+    Args:
+        resp (Response): The response object for the given URL content
+        
+    Returns:
+        bool: True if URL is empty but connects (200 status), false if otherwise
+    """
+    
+    if resp.status == 200:
+        # Check if resonse has content
+        if resp.raw_response:
+            # Check if the content length == zero
+            if len(resp.raw_response.content) == 0:
+                return True  # Empty URL
+        else:
+            return True  # Empty URL
+    return False  # Not empty URL
     
