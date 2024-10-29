@@ -3,11 +3,26 @@ from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 
 seen_patterns = {}
+seen_links = set()
 
 def scraper(url, resp):
     print(f"Scraper called for URL: {url}")
+
+    # Makes sure we skip already seen links
+    if url in seen_links:
+        return []
+
+    # Otherwise, add the link to our seen set
+    seen_links.add(url)
+
+    # Extract all links found in our URL
     links = extract_next_links(url, resp)
-    return [link for link in links if is_valid(link)]
+
+    # Return list of valid only links found in current URL
+    valid_links = [link for link in links if is_valid(link)]
+
+    print(seen_links)
+    return valid_links
 
 def extract_next_links(url, resp):
     # Implementation required.
