@@ -56,6 +56,8 @@ def scraper(url, resp):
     print(f"[DEBUG] Unique valid links extracted from {url}: {list(seen_extracted)}")
     return list(seen_extracted)
 
+
+
 def extract_next_links(url, resp):
     # Implementation required.
     # url: the URL that was used to get the page
