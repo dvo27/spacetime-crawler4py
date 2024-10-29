@@ -188,39 +188,32 @@ def has_high_textual_content(content):
     Returns:
         bool: True if the page is deemed to have high textual information, otherwise False.
     """
+    if not content:
+        print("Debug: No content provided.")
+        return False
+    
     # Parse the page content using BeautifulSoup
     soup = BeautifulSoup(content, 'html.parser')
+    print("Debug: Parsed HTML content with BeautifulSoup.")
 
-    # Extract text and HTML tag information
-    text = soup.get_text(separator=' ')
-    total_text_length = len(text)
-    total_html_length = len(str(soup))
+    # Extract text content from the HTML
+    text_content = soup.get_text(separator=' ', strip=True)
+    print("Debug: Extracted text content.")
+    
+    # Count the number of words
+    words = re.findall(r'\b\w+\b', text_content.lower())
+    word_count = len(words)
+    print(f"Debug: Word count = {word_count}")
 
-    # Calculate text-to-HTML ratio
-    text_to_html_ratio = total_text_length / total_html_length if total_html_length > 0 else 0
-    print(f"[DEBUG] Text-to-HTML ratio: {text_to_html_ratio:.2f}")
-
-    # Define a threshold for a meaningful text-to-HTML ratio
-    # Adjust this threshold based on observed data (e.g., 0.2 means 20% text)
-    TEXT_HTML_RATIO_THRESHOLD = 0.2
-    if text_to_html_ratio < TEXT_HTML_RATIO_THRESHOLD:
-        print(f"[DEBUG] Low text-to-HTML ratio detected, skipping.")
+    # Check if word count meets threshold
+    if word_count < 100:
+        print("Debug: Page does not have significant textual content.")
         return False
-
-    # Count meaningful keywords as another check
-    keywords = ['research', 'university', 'study', 'course', 'statistics', 'data']  # Add relevant keywords
-    keyword_count = sum(text.lower().count(keyword) for keyword in keywords)
-    print(f"[DEBUG] Keyword count: {keyword_count}")
-
-    # Define a threshold for the presence of keywords (example: 5)
-    KEYWORD_THRESHOLD = 5
-    if keyword_count < KEYWORD_THRESHOLD:
-        print(f"[DEBUG] Low keyword presence detected, skipping.")
-        return False
-
-    # If both conditions are met, the page has high textual information content
-    return True
-
+    else:
+        print("Debug: Page has significant textual content.")
+        return True
+    
+    
 def is_similar_page(content):
     """
     Detects if a page is similar to previously seen pages by comparing SimHash values.
