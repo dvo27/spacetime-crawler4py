@@ -3,6 +3,7 @@ from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 
 def scraper(url, resp):
+    print(f"Scraper called for URL: {url}")
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
@@ -16,6 +17,7 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
+    print(f"Extracting links from: {url}")
     if resp.status != 200 or not resp.raw_response:
         return[]
     
@@ -36,13 +38,15 @@ def extract_next_links(url, resp):
         # Removes fragments
         absolute_link = urlparse(absolute_link)._replace(fragment="").geturl()
         links.append(absolute_link)
-        
+    
+    print(f"Total links extracted: {len(links)}")
     return links
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
+    print(f"Validating URL: {url}")
     try:
         usel = urlparse(url)._replace(fragment="").geturl()
         parsed = urlparse(usel)
