@@ -24,16 +24,17 @@ def scraper(url, resp):
     links = extract_next_links(url, resp)
     seen_extracted = set()
     # Check each link thats been extracted
-    #### check if it's empty
-    #### call is valid
-    #### check if unique
-    #### not a trap
+    for link in links:
+        if is_valid(link): # call is valid
+            if not detect_trap(link): # not a trap
+                if not empty_URL(resp): # check if it's empty
+                    unique_links.add(link) # check if unique
 
     # Return list of valid only links found in current URL
     valid_links = [link for link in links if is_valid(link)]
 
     print(seen_links)
-    return valid_links
+    return list(unique_links)
 
 def extract_next_links(url, resp):
     # Implementation required.
