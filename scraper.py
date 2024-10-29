@@ -16,7 +16,7 @@ def scraper(url, resp):
     #### not a trap
 
     # Checks if url and its content has a trap or if is empty, if so, skip over
-    if check_trap(url) or empty_URL(resp):
+    if check_trap(url) or empty_URL(resp) or not is_valid(url):
         print(f"No information or trap detected for URL {url}, skipping...")
         return []
     
