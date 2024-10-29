@@ -7,7 +7,11 @@ seen_links = set()
 
 def scraper(url, resp):
     print(f"Scraper called for URL: {url}")
-
+    # Check the url being passed into scraper
+    #### check if it's empty
+    #### call is valid
+    #### check if unique
+    
     # Makes sure we skip already seen links
     if url in seen_links:
         return []
@@ -16,7 +20,12 @@ def scraper(url, resp):
     seen_links.add(url)
 
     # Extract all links found in our URL
+    seen_extracted = set()
     links = extract_next_links(url, resp)
+    # Check each link thats been extracted
+    #### unique
+    #### not a trap
+    #### check if there is content in the url
 
     # Return list of valid only links found in current URL
     valid_links = [link for link in links if is_valid(link)]
