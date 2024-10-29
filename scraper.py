@@ -2,6 +2,8 @@ import re
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 
+seen_patterns = {}
+
 def scraper(url, resp):
     print(f"Scraper called for URL: {url}")
     links = extract_next_links(url, resp)
@@ -75,3 +77,27 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
+def extract_pattern(url):
+    # Parse the URL
+    parsed = urlparse(url)
+    
+    # Replace digit sequences in the path with "[digit]"
+    path_pattern = re.sub(r'\d+', '[digit]', parsed.path)
+    
+    # Rebuild the URL pattern with the modified path
+    url_pattern = f"{parsed.scheme}://{parsed.netloc}{path_pattern}"
+    
+    return url_pattern
+
+def detect_pattern(url):
+    pattern = extract_pattern(url)  # Get the URL pattern with placeholders for digits
+    visited_patterns[pattern] += 1  # Increment count for this pattern
+    
+    # Threshold for pattern repetition (e.g., more than 10 occurrences)
+    if visited_patterns[pattern] > 10:
+        print(f"[DEBUG] Trap detected for pattern: {pattern}")
+        return True
+    
+    return False
+    
