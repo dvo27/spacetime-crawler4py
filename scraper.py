@@ -12,7 +12,13 @@ def scraper(url, resp):
     #### call is valid
     #### check if unique
     #### not a trap
-    
+
+    # Checks if url and its content has a trap or if is empty, if so, skip over
+    if check_trap(url) or empty_URL(resp):
+        print(f"No information or trap detected for URL {url}, skipping...")
+        return []
+
+
     # Makes sure we skip already seen links
     if url in seen_links:
         return []
@@ -22,19 +28,18 @@ def scraper(url, resp):
 
     # Extract all links found in our URL
     links = extract_next_links(url, resp)
+
+    # Keep track of unique links
     seen_extracted = set()
+
     # Check each link thats been extracted
     for link in links:
         if is_valid(link): # call is valid
-            if not detect_trap(link): # not a trap
-                if not empty_URL(resp): # check if it's empty
-                    unique_links.add(link) # check if unique
+            if not check_trap(link): # not a trap
+                seen_extracted.add(link) # add valid link to our seen_extracted set
 
-    # Return list of valid only links found in current URL
-    valid_links = [link for link in links if is_valid(link)]
-
-    print(seen_links)
-    return list(unique_links)
+    print(list(seen_extracted))
+    return list(seen_extracted)
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -49,25 +54,25 @@ def extract_next_links(url, resp):
     print(f"Extracting links from: {url}")
     if resp.status != 200 or not resp.raw_response:
         return[]
-    
+
     # Step 2: Check if `raw_response` and `raw_response.content` are available
     if not resp.raw_response or not resp.raw_response.content:
         print(f"No content available for {url}")
         return []
-     
+
     # Parse the content of the page
     soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
-    
+
     links = []
-    
+
     for link in soup.find_all('a', href = True):
         href = link['href']
         absolute_link = urljoin(resp.raw_response.url, link['href'])
-        
+
         # Removes fragments
         absolute_link = urlparse(absolute_link)._replace(fragment="").geturl()
         links.append(absolute_link)
-    
+
     print(f"Total links extracted: {len(links)}")
     return links
 
@@ -79,10 +84,10 @@ def is_valid(url):
     try:
         usel = urlparse(url)._replace(fragment="").geturl()
         parsed = urlparse(usel)
-        
+
         if parsed.scheme not in set(["http", "https"]):
             return False
-        
+
         # check if the URL belongs to allowed domains and paths
         if re.match(r"(.*\.)?(ics|cs|informatics|stat)\.uci\.edu$", parsed.netloc):
             pass
@@ -117,17 +122,21 @@ def extract_pattern(url):
     
     return url_pattern
 
-def detect_pattern(url):
+def check_trap(url) -> bool:
     pattern = extract_pattern(url)  # Get the URL pattern with placeholders for digits
+    
+    if pattern not in seen_patterns:
+        seen_patterns[pattern] = 1
+    
     seen_patterns[pattern] += 1  # Increment count for this pattern
     
     # Threshold for pattern repetition (e.g., more than 10 occurrences)
     if seen_patterns[pattern] > 10:
         print(f"[DEBUG] Trap detected for pattern: {pattern}")
         return True
-    
+
     return False
-    
+
 def empty_URL(resp):
     """
     Checks for if the URL works, but has no content
@@ -138,7 +147,7 @@ def empty_URL(resp):
     Returns:
         bool: True if URL is empty but connects (200 status), false if otherwise
     """
-    
+
     if resp.status == 200:
         # Check if resonse has content
         if resp.raw_response:
