@@ -1,9 +1,11 @@
 import re
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
+from simhash import Simhash
 
 seen_patterns = {}
 seen_links = set()
+visited_hashes = set()
 
 def scraper(url, resp):
     print(f"Scraper called for URL: {url}")
@@ -16,6 +18,19 @@ def scraper(url, resp):
     # Checks if url and its content has a trap or if is empty, if so, skip over
     if check_trap(url) or empty_URL(resp):
         print(f"No information or trap detected for URL {url}, skipping...")
+        return []
+    
+    if not has_high_textual_content(resp.raw_response.content):
+        print(f"[DEBUG] Low textual content detected for URL {url}, skipping...")
+        return []
+    
+    # Process content to evaluate similarity and information quality
+    soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
+    text_content = soup.get_text(separator=' ', strip=True)
+
+    # Check if the page is similar to others seen before or if it lacks information
+    if is_similar_page(text_content):
+        print(f"[DEBUG] Similar or low-information page detected for URL {url}, skipping...")
         return []
 
 
@@ -38,7 +53,7 @@ def scraper(url, resp):
             if not check_trap(link): # not a trap
                 seen_extracted.add(link) # add valid link to our seen_extracted set
 
-    print(list(seen_extracted))
+    print(f"[DEBUG] Unique valid links extracted from {url}: {list(seen_extracted)}")
     return list(seen_extracted)
 
 def extract_next_links(url, resp):
@@ -157,4 +172,69 @@ def empty_URL(resp):
         else:
             return True  # Empty URL
     return False  # Not empty URL
+
+def has_high_textual_content(content):
+    """
+    Determines if a page has high textual information content based on the text-to-HTML ratio
+    and the presence of meaningful keywords.
+
+    Args:
+        content (bytes): The raw HTML content of the page.
+
+    Returns:
+        bool: True if the page is deemed to have high textual information, otherwise False.
+    """
+    # Parse the page content using BeautifulSoup
+    soup = BeautifulSoup(content, 'html.parser')
+
+    # Extract text and HTML tag information
+    text = soup.get_text(separator=' ')
+    total_text_length = len(text)
+    total_html_length = len(str(soup))
+
+    # Calculate text-to-HTML ratio
+    text_to_html_ratio = total_text_length / total_html_length if total_html_length > 0 else 0
+    print(f"[DEBUG] Text-to-HTML ratio: {text_to_html_ratio:.2f}")
+
+    # Define a threshold for a meaningful text-to-HTML ratio
+    # Adjust this threshold based on observed data (e.g., 0.2 means 20% text)
+    TEXT_HTML_RATIO_THRESHOLD = 0.2
+    if text_to_html_ratio < TEXT_HTML_RATIO_THRESHOLD:
+        print(f"[DEBUG] Low text-to-HTML ratio detected, skipping.")
+        return False
+
+    # Count meaningful keywords as another check
+    keywords = ['research', 'university', 'study', 'course', 'statistics', 'data']  # Add relevant keywords
+    keyword_count = sum(text.lower().count(keyword) for keyword in keywords)
+    print(f"[DEBUG] Keyword count: {keyword_count}")
+
+    # Define a threshold for the presence of keywords (example: 5)
+    KEYWORD_THRESHOLD = 5
+    if keyword_count < KEYWORD_THRESHOLD:
+        print(f"[DEBUG] Low keyword presence detected, skipping.")
+        return False
+
+    # If both conditions are met, the page has high textual information content
+    return True
+
+def is_similar_page(content):
+    """
+    Detects if a page is similar to previously seen pages by comparing SimHash values.
+
+    Args:
+        content (str): The text content of the page.
+
+    Returns:
+        bool: True if the page is similar to existing pages, False otherwise.
+    """
+    # Generate SimHash for the content
+    current_hash = Simhash(content)
+    for existing_hash in visited_hashes:
+        # Check for similarity using SimHash's hamming distance
+        if current_hash.distance(existing_hash) < 5:  # threshold of 5 can be adjusted
+            print("[DEBUG] Similar page detected, skipping...")
+            return True
+    # If not similar, add hash to visited
+    visited_hashes.add(current_hash)
+    return False
     
