@@ -22,9 +22,20 @@ def is_valid(url):
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
     try:
-        parsed = urlparse(url)
+        usel = urlparse(url)._replace(fragment="").geturl()
+        parsed = urlparse(usel)
+        
         if parsed.scheme not in set(["http", "https"]):
             return False
+        
+        # check if the URL belongs to allowed domains and paths
+        if re.match(r"(.*\.)?(ics|cs|informatics|stat)\.uci\.edu$", parsed.netloc):
+            pass
+        elif parsed.netloc == "today.uci.edu" and parsed.path.startswith("/department/information_computer_sciences"):
+            pass
+        else:
+            return False
+        
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
