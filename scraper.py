@@ -54,6 +54,8 @@ def scraper(url, resp):
                 seen_extracted.add(link) # add valid link to our seen_extracted set
 
     print(f"[DEBUG] Unique valid links extracted from {url}: {list(seen_extracted)}")
+    
+    save_unique_pages()
     return list(seen_extracted)
 
 def extract_next_links(url, resp):
@@ -229,15 +231,21 @@ def is_similar_page(content):
     """
     # Generate SimHash for the content
     current_hash = Simhash(content)
-    for existing_hash in visited_hashes:
-        # Check for similarity using SimHash's hamming distance
+    current_hash_value = current_hash.value  # Get the integer representation of the Simhash
+
+    for existing_hash_value in visited_hashes:
+        # Create a Simhash object from the stored integer value to compare distances
+        existing_hash = Simhash(existing_hash_value)
+        # Check for similarity using SimHash's Hamming distance
         if current_hash.distance(existing_hash) < 5:  # threshold of 5 can be adjusted
             print("[DEBUG] Similar page detected, skipping...")
             return True
-    # If not similar, add hash to visited
-    visited_hashes.add(current_hash)
+
+    # If not similar, add the integer hash to visited_hashes
+    visited_hashes.add(current_hash_value)
     return False
 
 def save_unique_pages():
     with open('unique_pages.txt', 'w') as file:
         file.write(f"Total Unique Pages: {len(seen_links)}\n")
+
