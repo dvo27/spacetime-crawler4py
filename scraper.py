@@ -237,4 +237,7 @@ def is_similar_page(content):
     # If not similar, add hash to visited
     visited_hashes.add(current_hash)
     return False
-    
+
+def save_unique_pages():
+    with open('unique_pages.txt', 'w') as file:
+        file.write(f"Total Unique Pages: {len(seen_links)}\n")
