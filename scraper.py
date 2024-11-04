@@ -6,6 +6,8 @@ from simhash import Simhash
 seen_patterns = {}
 seen_links = set()
 visited_hashes = set()
+# Global variable to store the longest page information
+longest_page = {"url": "", "word_count": 0}
 
 def scraper(url, resp):
     print(f"Scraper called for URL: {url}")
@@ -27,19 +29,22 @@ def scraper(url, resp):
     # Process content to evaluate similarity and information quality
     soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
     text_content = soup.get_text(separator=' ', strip=True)
+    word_count = len(re.findall(r'\b\w+\b', text_content.lower()))
 
     # Check if the page is similar to others seen before or if it lacks information
     if is_similar_page(text_content):
         print(f"[DEBUG] Similar or low-information page detected for URL {url}, skipping...")
         return []
-
-
+    
     # Makes sure we skip already seen links
     if url in seen_links:
         return []
 
     # Otherwise, add the link to our seen set
     seen_links.add(url)
+    
+    # Update the longest page if the current page has more words
+    update_longest_page(url, word_count)
 
     # Extract all links found in our URL
     links = extract_next_links(url, resp)
@@ -244,3 +249,15 @@ def save_unique_pages():
     with open('unique_pages.txt', 'w') as file:
         file.write(f"Total Unique Pages: {len(seen_links)}\n")
 
+
+def update_longest_page(url, word_count):
+    global longest_page
+    if word_count > longest_page["word_count"]:
+        longest_page["url"] = url
+        longest_page["word_count"] = word_count
+        print(f"[DEBUG] New longest page found: {url} with {word_count} words.")
+        
+        # Save the longest page information to a file
+        with open("longest_page.txt", "w") as file:
+            file.write(f"Longest Page URL: {url}\n")
+            file.write(f"Word Count: {word_count}\n")
