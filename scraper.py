@@ -1,4 +1,5 @@
 import re
+from collections import Counter
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 from simhash import Simhash
@@ -6,8 +7,31 @@ from simhash import Simhash
 seen_patterns = {}
 seen_links = set()
 visited_hashes = set()
+common_words_count = Counter()
+
 # Global variable to store the longest page information
 longest_page = {"url": "", "word_count": 0}
+
+# Keep track of our stopwords to ignore
+stopwords = [
+    "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", 
+    "are", "aren't", "as", "at", "be", "because", "been", "before", "being", "below", 
+    "between", "both", "but", "by", "can't", "cannot", "could", "couldn't", "did", "didn't", 
+    "do", "does", "doesn't", "doing", "don't", "down", "during", "each", "few", "for", "from", 
+    "further", "had", "hadn't", "has", "hasn't", "have", "haven't", "having", "he", "he'd", 
+    "he'll", "he's", "her", "here", "here's", "hers", "herself", "him", "himself", "his", "how", 
+    "how's", "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "isn't", "it", "it's", 
+    "its", "itself", "let's", "me", "more", "most", "mustn't", "my", "myself", "no", "nor", 
+    "not", "of", "off", "on", "once", "only", "or", "other", "ought", "our", "ours", "ourselves", 
+    "out", "over", "own", "same", "shan't", "she", "she'd", "she'll", "she's", "should", 
+    "shouldn't", "so", "some", "such", "than", "that", "that's", "the", "their", "theirs", "them", 
+    "themselves", "then", "there", "there's", "these", "they", "they'd", "they'll", "they're", 
+    "they've", "this", "those", "through", "to", "too", "under", "until", "up", "very", "was", 
+    "wasn't", "we", "we'd", "we'll", "we're", "we've", "were", "weren't", "what", "what's", 
+    "when", "when's", "where", "where's", "which", "while", "who", "who's", "whom", "why", 
+    "why's", "with", "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've", 
+    "your", "yours", "yourself", "yourselves"
+]
 
 def scraper(url, resp):
     print(f"Scraper called for URL: {url}")
@@ -17,6 +41,10 @@ def scraper(url, resp):
     #### check if unique
     #### not a trap
 
+    # Makes sure we skip already seen links
+    if url in seen_links:
+        return []
+    
     # Checks if url and its content has a trap or if is empty, if so, skip over
     if check_trap(url) or empty_URL(resp) or not is_valid(url):
         print(f"No information or trap detected for URL {url}, skipping...")
@@ -36,33 +64,33 @@ def scraper(url, resp):
         print(f"[DEBUG] Similar or low-information page detected for URL {url}, skipping...")
         return []
     
-    # Makes sure we skip already seen links
-    if url in seen_links:
-        return []
-
+    if resp.status == 200 and resp.raw_response and resp.raw_response.content:
+        # Update the longest page if the current page has more words
+        update_longest_page(url, word_count)
+        most_common_words(resp.raw_response.content)
+    
     # Otherwise, add the link to our seen set
     seen_links.add(url)
     
-    # Update the longest page if the current page has more words
-    update_longest_page(url, word_count)
 
     # Extract all links found in our URL
     links = extract_next_links(url, resp)
 
-    # Keep track of unique links
-    seen_extracted = set()
-
     # Check each link thats been extracted
     for link in links:
-        if is_valid(link): # call is valid
-            if not check_trap(link): # not a trap
-                seen_extracted.add(link) # add valid link to our seen_extracted set
 
-    print(f"[DEBUG] Unique valid links extracted from {url}: {list(seen_extracted)}")
-    
+        # call is valid and we have not added link yet
+        if is_valid(link) and link not in seen_links:
+
+            # add valid link to our seen_extracted set
+            seen_links.add(link)
+
+    print(f"[DEBUG] Unique valid links extracted from {url}: {list(seen_links)}")
+
     save_unique_pages()
-    return list(seen_extracted)
-
+    save_most_common_words()
+    
+    return list(seen_links)
 
 
 def extract_next_links(url, resp):
@@ -261,3 +289,25 @@ def update_longest_page(url, word_count):
         with open("longest_page.txt", "w") as file:
             file.write(f"Longest Page URL: {url}\n")
             file.write(f"Word Count: {word_count}\n")
+
+
+def most_common_words(html_content):
+    word_counts = count_words_in_content(html_content)
+    common_words_count.update(word_counts)
+
+
+def count_words_in_content(html_content):
+    """
+    Returns a counter object of every word in the content and its count, filtering out stop words
+    """
+    soup = BeautifulSoup(html_content, 'html.parser')
+    text = soup.get_text()
+    words = re.findall(r'\b\w+\b', text.lower())
+    filtered_words = [word for word in words if word not in stopwords and len(word) > 2]
+    return Counter(filtered_words)
+
+def save_most_common_words():
+    with open('common_words.txt', 'w') as file:
+        file.write("Most Common Words:\n")
+        for word, count in common_words_count.most_common(50):
+            file.write(f"{word}: {count}\n")
