@@ -8,6 +8,8 @@ seen_patterns = {}
 seen_links = set()
 visited_hashes = set()
 common_words_count = Counter()
+subdomain_pages = defaultdict(set)
+processed_count = 0
 
 # Global variable to store the longest page information
 longest_page = {"url": "", "word_count": 0}
@@ -71,6 +73,15 @@ def scraper(url, resp):
     
     # Otherwise, add the link to our seen set
     seen_links.add(url)
+    add_to_subdomains(url)
+    
+    # Increment the processed counter
+    processed_count += 1
+    
+    # Checkpoint: save subdomain info every 100 URLs processed
+    if processed_count % 100 == 0:
+        print("[DEBUG] Checkpoint reached. Saving subdomain information.")
+        save_subdomain_info()
     
 
     # Extract all links found in our URL
@@ -311,3 +322,22 @@ def save_most_common_words():
         file.write("Most Common Words:\n")
         for word, count in common_words_count.most_common(50):
             file.write(f"{word}: {count}\n")
+            
+def add_to_subdomains(url):
+    parsed_url = urlparse(url)
+    if parsed_url.netloc.endswith("uci.edu"):
+        subdomain = parsed_url.netloc  # Get the full subdomain, e.g., "vision.ics.uci.edu"
+        subdomain_pages[subdomain].add(url)  # Add unique URL to the set
+        
+def save_subdomain_info():
+    with open('subdomains.txt', 'w') as file:
+        for subdomain, urls in sorted(subdomain_pages.items()):
+            if urls:
+                example_url = next(iter(urls))
+                parsed_url = urlparse(example_url)
+                scheme = parsed_url.scheme
+                netloc = parsed_url.netloc
+
+                formatted_subdomain = f"{scheme}://{netloc}"
+                file.write(f"{formatted_subdomain}, {len(urls)}\n")
+                
