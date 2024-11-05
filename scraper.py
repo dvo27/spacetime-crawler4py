@@ -53,6 +53,11 @@ def scraper(url, resp):
         print(f"No information or trap detected for URL {url}, skipping...")
         return []
     
+    # Check if `resp.raw_response` and `resp.raw_response.content` are available
+    if not resp.raw_response or not resp.raw_response.content:
+        print(f"No content available for {url}, skipping...")
+        return []
+    
     if not has_high_textual_content(resp.raw_response.content):
         print(f"[DEBUG] Low textual content detected for URL {url}, skipping...")
         return []

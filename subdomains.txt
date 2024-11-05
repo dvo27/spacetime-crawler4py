@@ -1,0 +1,11 @@
+https://acoi.ics.uci.edu, 2
+http://cert.ics.uci.edu, 2
+https://cs.uci.edu, 1
+http://fr.ics.uci.edu, 2
+https://hpi.ics.uci.edu, 2
+http://i-sensorium.ics.uci.edu, 1
+https://ics.uci.edu, 60
+https://isg.ics.uci.edu, 6
+https://mds.ics.uci.edu, 1
+https://www.ics.uci.edu, 12
+https://www.stat.uci.edu, 11
