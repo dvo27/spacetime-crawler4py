@@ -1,5 +1,5 @@
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 from simhash import Simhash
@@ -36,6 +36,7 @@ stopwords = [
 ]
 
 def scraper(url, resp):
+    global processed_count
     print(f"Scraper called for URL: {url}")
     # Check the url being passed into scraper
     #### check if it's empty
