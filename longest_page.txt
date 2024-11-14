@@ -1,2 +1,2 @@
-Longest Page URL: https://www.ics.uci.edu/~givargis
-Word Count: 4464
+Longest Page URL: https://ics.uci.edu/academics/undergraduate-academic-advising/majorminor_restrictions_chart
+Word Count: 58593
