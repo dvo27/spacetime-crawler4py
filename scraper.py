@@ -74,7 +74,7 @@ def scraper(url, resp):
     
     if resp.status == 200 and resp.raw_response and resp.raw_response.content:
         # Update the longest page if the current page has more words
-        update_longest_page(url, word_count)
+        update_longest_page(url, resp.raw_response.content)
         most_common_words(resp.raw_response.content)
     
     # Otherwise, add the link to our seen set
@@ -295,8 +295,37 @@ def save_unique_pages():
         file.write(f"Total Unique Pages: {len(seen_links)}\n")
 
 
-def update_longest_page(url, word_count):
+# def update_longest_page(url, word_count):
+#     global longest_page
+#     if word_count > longest_page["word_count"]:
+#         longest_page["url"] = url
+#         longest_page["word_count"] = word_count
+#         print(f"[DEBUG] New longest page found: {url} with {word_count} words.")
+        
+#         # Save the longest page information to a file
+#         with open("longest_page.txt", "w") as file:
+#             file.write(f"Longest Page URL: {url}\n")
+#             file.write(f"Word Count: {word_count}\n")
+
+
+def update_longest_page(url, html_content):
     global longest_page
+    
+    # Parse the HTML content
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Remove unwanted tags like <script>, <style>, <nav>, <footer>, <header>, and <aside>
+    for tag in soup(['script', 'style', 'nav', 'footer', 'header', 'aside']):
+        tag.decompose()
+    
+    # Extract the visible text content
+    text_content = soup.get_text(separator=' ', strip=True)
+    
+    # Count the number of words using a regular expression
+    words = re.findall(r'\b[a-zA-Z]{3,}\b', text_content.lower())  # Words of 3 or more letters
+    word_count = len(words)
+    
+    # Update the longest page if the current page has more words
     if word_count > longest_page["word_count"]:
         longest_page["url"] = url
         longest_page["word_count"] = word_count
